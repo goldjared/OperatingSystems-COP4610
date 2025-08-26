@@ -7,8 +7,6 @@ void getUserAge() {
 	int age;
 	printf("Enter your age: ");
 	scanf("%d", &age);
-//	int flag1 = age>=18;
-//	printf("flag1: %d", flag1);
 	printf(age>=18 ? "You are an adult.\n" : "You are a minor.\n");
 }
 
