@@ -5,7 +5,7 @@
 #include <sys/wait.h>
 
 // function prototype for compiler
-void childTaskPrint(int childTask, int n);
+void childTaskPrint(int childTask, int n, int totalChilds);
 
 // get my name 
 
@@ -13,11 +13,20 @@ void childTaskPrint(int childTask, int n);
 
 // get the first n letters of alphabet
 
-// get the power of n
+// get the power of childsNum to n
+int* powerOfChildsNumToN(int childNum, int n) {
+	int* resultArr = malloc(sizeof(int));  // allocate space for 1 int
+	*resultArr = 1;
+
+	for (int i = 0; i < n; i++) {
+		*resultArr *= childNum;
+	}
+
+	return resultArr;
+}
 
 // function returns a dynamically allocated array of integers
 int* counter(int n) {
-    childTaskPrint(1, n);
     // allocate memory for n integers
     int* arr = malloc(n * sizeof(int));
     if (arr == NULL) {
@@ -32,7 +41,7 @@ int* counter(int n) {
     return arr;
 }
 
-void childTaskPrint(int childTask, int n) {
+void childTaskPrint(int childTask, int n, int totalChilds) {
 	// buffer for integer's string representation
 	char num_str[10]; 
 
@@ -43,14 +52,14 @@ void childTaskPrint(int childTask, int n) {
 
 	const char *strNameList[5] = { 
 	    "Counting from 1 to ",
-	    "Calculating the power of ",
+	    "Calculating raising childs^",
 	    "Calculating the sum of ", 
 	    "Calculating the fibonacci number of ",
 	    "Calculating the length of \"Jared Gold\"" 
 	};
 
 	pid_t pid = getpid();
-	printf("[Child %d - PID: %d] Performing Task: %s%s.\n", childTask, (int) pid, strNameList[childTask - 1], num_str);
+	printf("[Child %d - PID: %d] Performing Task: %s%s.\n%s", childTask, (int) pid, strNameList[childTask - 1], num_str, (childTask == totalChilds ? "\n" : ""));
 }
 
 int main(void) {
@@ -60,22 +69,24 @@ int main(void) {
 	int status = 0;
 	int childCount;
 
-	// childs write their #
-	int thisChild;
+	// error handle on > 5 or < 1 or 0
+	printf("Input a number of child processes to create (1-5): ");
+	scanf("%d", &childCount);
 
-	// pipe
-	int fd[2];
-	pipe(fd);
+	// pipes
+	int fd[childCount][2];
+	for (int i = 0; i < childCount; i++) {
+	    if (pipe(fd[i]) == -1) {
+		perror("pipe failed");
+		exit(1);
+	    }
+	}
 
 	// create array of childCount to store child pids
 	int pids[childCount];
-	
-	printf("Input a number of child processes to create (1-5):\n");
-	scanf("%d", &childCount);
-	// error handle on > 5 or < 1 or 0
 
 	pid_t parent = getpid();
-	printf("Parent process (PID: %d) is creating %d child processes.\n", (int) parent, childCount);
+	printf("Parent process (PID: %d) is creating %d child processes.\n\n", (int) parent, childCount);
 
 	// loop to childCount, create forks
 	for(int i = 0; i < childCount; i++) {
@@ -86,46 +97,64 @@ int main(void) {
 		} else if(pids[i] == 0) {
 			// child process
 			// close read end
-			close(fd[0]);
+			close(fd[i][0]);
 			
+			int size;
 			// write child number
-			thisChild = i + 1;
-			write(fd[1], &thisChild, sizeof(thisChild));
+			int thisChild = i + 1;
+			write(fd[i][1], &thisChild, sizeof(thisChild));
 			if(i == 0) {
+
+				childTaskPrint(1, n, childCount);
 				int* counted = counter(n);
-				write(fd[1], counted, n * sizeof(int));
+				size = n;
+				write(fd[i][1], &size, sizeof(int));
+				write(fd[i][1], counted, n * sizeof(int));
 				free(counted);
+			} else if(i == 1) {
+				childTaskPrint(2, n, childCount);
+				int* powerChildsToN = powerOfChildsNumToN(childCount, n);
+				size = 1;
+				write(fd[i][1], &size, sizeof(int));
+				write(fd[i][1], powerChildsToN, sizeof(int));
+				free(powerChildsToN);
 			}
 
 			exit(0);
 		}
 	}
 
-	// wait for all child procs to finish
-	// we can assume we are parent here right? if we are parent our pids array should have all child pid ids
 	pid_t pid;
-	while(childCount > 0) {
-		pid = wait(&status);
 
-		// close write side
-		close(fd[1]);
+	for(int i = 0; i < childCount; i++) {
+		close(fd[i][1]);         // parent closes write end for pipe i
+		pid = waitpid(pids[i], &status, 0);  // wait for child i
+		//
+//		pid = wait(&status);
+		int thisChild;
+		read(fd[i][0], &thisChild, sizeof(thisChild));
 
-		int received[n];
+		int incomingSize;
+		read(fd[i][0], &incomingSize, sizeof(int));
 
-		read(fd[0], &thisChild, sizeof(thisChild));
-		read(fd[0], received, sizeof(received));
+		int* received = malloc(incomingSize * sizeof(int));
+		//int received[incomingSize];
+		read(fd[i][0], received, incomingSize * sizeof(int));
+		//read(fd[0], received, incomingSize * sizeof(int));
 
 		printf("[Parent - PID: %d] Child %d (PID: %d) completed it's task, result: ", parent, thisChild, pid);
 
-		for (int i = 0; i < n; i++) {
+		for (int i = 0; i < incomingSize; i++) {
 		    printf("%d", received[i]);
-		    if (i < n - 1) {
+		    if (i < incomingSize - 1) {
 			printf(" ");
 		    }
 		}
 		printf("\n");
 
-		childCount--;
+		free(received);
+
+		//childCount--;
 	}
 
 	return 1;
