@@ -31,4 +31,11 @@ for (i = 0; i < 4; i++) {
 ** arrays
 in c, name off arr is pointer in arr to indice 0
 
+** fork
+returns:
+-1 = error
+0 = child proc
+> 0 = parent (fork returns pid of child)
+
+** pipes
 
