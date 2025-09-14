@@ -34,9 +34,11 @@ int main(void) {
 	int status = 0;
 	int childCount;
 
+	// childs write their #
+	int thisChild;
+
 	// pipe
 	int fd[2];
-	char readbuffer[90];
 	pipe(fd);
 
 	// create array of childCount to store child pids
@@ -59,15 +61,17 @@ int main(void) {
 			// child process
 			// close read end
 			close(fd[0]);
+			
+			// write child number
+			thisChild = i + 1;
+			write(fd[1], &thisChild, sizeof(thisChild));
 			if(i == 0) {
 				int* counted = counter(n);
 				write(fd[1], counted, n * sizeof(int));
 				free(counted);
 			}
 
-			// need to store function output to parent, and its child #
 			exit(0);
-
 		}
 	}
 
@@ -79,9 +83,22 @@ int main(void) {
 
 		// close write side
 		close(fd[1]);
+
 		int received[n];
+
+		read(fd[0], &thisChild, sizeof(thisChild));
 		read(fd[0], received, sizeof(received));
-		printf("[Parent - PID: %d] Child x (PID: %d) completed it's task, result: %d\n", parent, pid, received[0]);
+
+		printf("[Parent - PID: %d] Child %d (PID: %d) completed it's task, result: ", parent, thisChild, pid);
+
+		for (int i = 0; i < n; i++) {
+		    printf("%d", received[i]);
+		    if (i < n - 1) {
+			printf(" ");
+		    }
+		}
+		printf("\n");
+
 		childCount--;
 	}
 
