@@ -2,6 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/wait.h>
+
+// function prototype for compiler
+void childTaskPrint(int childTask, int n);
 
 // get my name 
 
@@ -13,6 +17,7 @@
 
 // function returns a dynamically allocated array of integers
 int* counter(int n) {
+    childTaskPrint(1, n);
     // allocate memory for n integers
     int* arr = malloc(n * sizeof(int));
     if (arr == NULL) {
@@ -25,6 +30,27 @@ int* counter(int n) {
     }
 
     return arr;
+}
+
+void childTaskPrint(int childTask, int n) {
+	// buffer for integer's string representation
+	char num_str[10]; 
+
+	if(n == -1) 
+		num_str[0] = '\0';
+	else 
+		sprintf(num_str, "%d", n); 
+
+	const char *strNameList[5] = { 
+	    "Counting from 1 to ",
+	    "Calculating the power of ",
+	    "Calculating the sum of ", 
+	    "Calculating the fibonacci number of ",
+	    "Calculating the length of \"Jared Gold\"" 
+	};
+
+	pid_t pid = getpid();
+	printf("[Child %d - PID: %d] Performing Task: %s%s.\n", childTask, (int) pid, strNameList[childTask - 1], num_str);
 }
 
 int main(void) {
