@@ -27,8 +27,8 @@ int fib(int n) {
 	return fib(n-2) + fib(n-1);
 }
 
-// create prefixed sum array from 1 to n
-int* prefixedSumArray(int n) {
+// create prefixed product array from 1 to n
+int* prefixedProdArray(int n) {
 	int* arr = malloc(n * sizeof(int));
 	if (arr == NULL) {
 		return NULL;
@@ -87,7 +87,7 @@ void childTaskPrint(int childTask, int n, int totalChilds) {
 	const char *strNameList[5] = { 
 	    "Counting from 1 to ",
 	    "Calculating raising childs^",
-	    "Calculating the prefixed sum arr of 1 ... ", 
+	    "Calculating the prefixed product arr of 1 ... ", 
 	    "Calculating the fibonacci number of ",
 	    "Counting down from " 
 	};
@@ -157,11 +157,11 @@ int main(void) {
 				write(fd[i][1], powerChildsToN, sizeof(int));
 				free(powerChildsToN);
 			} else if(i == 2) {
-				int* prefixSumArr = prefixedSumArray(n);
+				int* prefixProdArr = prefixedProdArray(n);
 				size = n;
 				write(fd[i][1], &size, sizeof(int));
-				write(fd[i][1], prefixSumArr, n * sizeof(int));
-				free(prefixSumArr);
+				write(fd[i][1], prefixProdArr, n * sizeof(int));
+				free(prefixProdArr);
 			} else if(i == 3) {
 				int f = fib(n);
 				int fibStore[1];
