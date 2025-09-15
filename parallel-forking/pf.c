@@ -7,11 +7,44 @@
 // function prototype for compiler
 void childTaskPrint(int childTask, int n, int totalChilds);
 
-// get my name 
+int* countInReverse(int n) {
+	int* arr = malloc(n * sizeof(int));
+	if (arr == NULL) {
+		return NULL;
+	}
+
+	for (int i = 10; i > 0; i--) {
+		arr[n - i] = i;
+	}
+
+	return arr;
+}
 
 // fibonacci of n
+int fib(int n) {
+	// fib 3 = fib(2) + fib(1) 0 1 1
+	if(n < 2) return n;
+	return fib(n-2) + fib(n-1);
+}
 
-// get the first n letters of alphabet
+// create prefixed sum array from 1 to n
+int* prefixedSumArray(int n) {
+	int* arr = malloc(n * sizeof(int));
+	if (arr == NULL) {
+		return NULL;
+	}
+
+	for (int i = 0; i < n; i++) {
+		arr[i] = i + 1;
+	}
+
+	// calc sums
+	for (int i = 1; i < n; i++) {
+		arr[i] *= arr[i - 1];
+	}
+
+	return arr;
+}
 
 // get the power of childsNum to n
 int* powerOfChildsNumToN(int childNum, int n) {
@@ -30,7 +63,8 @@ int* counter(int n) {
     // allocate memory for n integers
     int* arr = malloc(n * sizeof(int));
     if (arr == NULL) {
-        return NULL; // memory allocation failed
+	// memory allocation failed
+        return NULL; 
     }
 
     // fill the array with numbers from 1 to n
@@ -53,9 +87,9 @@ void childTaskPrint(int childTask, int n, int totalChilds) {
 	const char *strNameList[5] = { 
 	    "Counting from 1 to ",
 	    "Calculating raising childs^",
-	    "Calculating the sum of ", 
+	    "Calculating the prefixed sum arr of 1 ... ", 
 	    "Calculating the fibonacci number of ",
-	    "Calculating the length of \"Jared Gold\"" 
+	    "Counting down from " 
 	};
 
 	pid_t pid = getpid();
@@ -72,6 +106,12 @@ int main(void) {
 	// error handle on > 5 or < 1 or 0
 	printf("Input a number of child processes to create (1-5): ");
 	scanf("%d", &childCount);
+
+	// if invalid value entry exit program
+	if(childCount < 1 || childCount > 5) {
+		printf("Invalid Input, exiting.\n");
+		return 1;
+	}
 
 	// pipes
 	int fd[childCount][2];
@@ -103,34 +143,58 @@ int main(void) {
 			// write child number
 			int thisChild = i + 1;
 			write(fd[i][1], &thisChild, sizeof(thisChild));
+			childTaskPrint(i + 1, n, childCount);
 			if(i == 0) {
-
-				childTaskPrint(1, n, childCount);
 				int* counted = counter(n);
 				size = n;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], counted, n * sizeof(int));
 				free(counted);
 			} else if(i == 1) {
-				childTaskPrint(2, n, childCount);
 				int* powerChildsToN = powerOfChildsNumToN(childCount, n);
 				size = 1;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], powerChildsToN, sizeof(int));
 				free(powerChildsToN);
+			} else if(i == 2) {
+				int* prefixSumArr = prefixedSumArray(n);
+				size = n;
+				write(fd[i][1], &size, sizeof(int));
+				write(fd[i][1], prefixSumArr, n * sizeof(int));
+				free(prefixSumArr);
+			} else if(i == 3) {
+				int f = fib(n);
+				int fibStore[1];
+				fibStore[0] = f;
+				size = 1;
+				write(fd[i][1], &size, sizeof(int));
+				write(fd[i][1], &fibStore, sizeof(int));
+			} else if(i == 4) {
+				int* reverseCount = countInReverse(n);
+				size = n;
+				write(fd[i][1], &size, sizeof(int));
+				write(fd[i][1], reverseCount, n * sizeof(int));
+				free(reverseCount);
 			}
 
 			exit(0);
 		}
 	}
 
-	pid_t pid;
+	pid_t wpid;
+
+	// wait for all child proc complete
+	while ((wpid = wait(&status)) > 0);
 
 	for(int i = 0; i < childCount; i++) {
-		close(fd[i][1]);         // parent closes write end for pipe i
-		pid = waitpid(pids[i], &status, 0);  // wait for child i
-		//
-//		pid = wait(&status);
+		// parent closes write end for pipe i
+		close(fd[i][1]);         
+
+		// ensure we are in parent
+		pid_t parent = getpid();
+		// child pid we are processing
+		pid_t pid = pids[i];
+
 		int thisChild;
 		read(fd[i][0], &thisChild, sizeof(thisChild));
 
@@ -138,9 +202,7 @@ int main(void) {
 		read(fd[i][0], &incomingSize, sizeof(int));
 
 		int* received = malloc(incomingSize * sizeof(int));
-		//int received[incomingSize];
 		read(fd[i][0], received, incomingSize * sizeof(int));
-		//read(fd[0], received, incomingSize * sizeof(int));
 
 		printf("[Parent - PID: %d] Child %d (PID: %d) completed it's task, result: ", parent, thisChild, pid);
 
@@ -153,8 +215,6 @@ int main(void) {
 		printf("\n");
 
 		free(received);
-
-		//childCount--;
 	}
 
 	return 1;
