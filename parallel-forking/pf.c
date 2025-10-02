@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/wait.h>
+#include <time.h>
 
 // function prototype for compiler
 void childTaskPrint(int childTask, int n, int totalChilds);
@@ -97,6 +98,7 @@ void childTaskPrint(int childTask, int n, int totalChilds) {
 }
 
 int main(void) {
+	clock_t start_time = clock();
 	// general constant number for functions
 	const int n = 10;
 
@@ -124,7 +126,7 @@ int main(void) {
 
 	// create array of childCount to store child pids
 	int pids[childCount];
-
+	
 	pid_t parent = getpid();
 	printf("Parent process (PID: %d) is creating %d child processes.\n\n", (int) parent, childCount);
 
@@ -145,32 +147,53 @@ int main(void) {
 			write(fd[i][1], &thisChild, sizeof(thisChild));
 			childTaskPrint(i + 1, n, childCount);
 			if(i == 0) {
+				clock_t start_time = clock();
 				int* counted = counter(n);
+				clock_t end_time = clock();
+				double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+				printf("task1 counter() took %f seconds to execute.\n", time_taken);
+
 				size = n;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], counted, n * sizeof(int));
 				free(counted);
 			} else if(i == 1) {
+				clock_t start_time = clock();
 				int* powerChildsToN = powerOfChildsNumToN(childCount, n);
+				clock_t end_time = clock();
+				double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+				printf("task2 powerOfChildsNumToN() took %f seconds to execute.\n", time_taken);
 				size = 1;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], powerChildsToN, sizeof(int));
 				free(powerChildsToN);
 			} else if(i == 2) {
+				clock_t start_time = clock();
 				int* prefixProdArr = prefixedProdArray(n);
+				clock_t end_time = clock();
+				double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+				printf("task3 prefixProdArr() took %f seconds to execute.\n", time_taken);
 				size = n;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], prefixProdArr, n * sizeof(int));
 				free(prefixProdArr);
 			} else if(i == 3) {
+				clock_t start_time = clock();
 				int f = fib(n);
+				clock_t end_time = clock();
+				double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+				printf("task4 fibonacci() took %f seconds to execute.\n", time_taken);
 				int fibStore[1];
 				fibStore[0] = f;
 				size = 1;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], &fibStore, sizeof(int));
 			} else if(i == 4) {
+				clock_t start_time = clock();
 				int* reverseCount = countInReverse(n);
+				clock_t end_time = clock();
+				double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+				printf("task5 countInReversecountInReverse() took %f seconds to execute.\n", time_taken);
 				size = n;
 				write(fd[i][1], &size, sizeof(int));
 				write(fd[i][1], reverseCount, n * sizeof(int));
@@ -216,6 +239,9 @@ int main(void) {
 
 		free(received);
 	}
+	clock_t end_time = clock();
+        double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+	printf("**program** took %f seconds to execute.\n", time_taken);
 
 	return 1;
 }
