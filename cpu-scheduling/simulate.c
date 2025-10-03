@@ -29,7 +29,7 @@ void printOrder(int execLog[], int size) {
 }
 
 
-void FCFS(struct simulatedProc processList[], int size) {
+void fcfs(struct simulatedProc processList[], int size) {
 /*
  *
 	** FCFS:
@@ -64,7 +64,8 @@ void FCFS(struct simulatedProc processList[], int size) {
 	int execLog[100];
 	int execCount = 0;
 	for(int i = 0; i < size; i++) {
-		processData[i][0] = time - processList[i].arrivalTime;
+		// bug here for arrival 0, 1, 30
+		processData[i][0] = time + processList[i].arrivalTime;
 		time += processList[i].burstTime;
 		processData[i][1] = processData[i][0] + processList[i].burstTime;
 		waitSum += processData[i][0];
@@ -131,7 +132,7 @@ int main(void) {
 	// sort proc list based on arrival times
 	qsort(procList, processCount, sizeof(struct simulatedProc), compareArrival);
 	// init FCFS
-	FCFS(procList, processCount);
+	fcfs(procList, processCount);
 
 
 	return 1;
