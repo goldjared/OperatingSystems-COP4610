@@ -33,9 +33,12 @@ int main(void) {
 		arrivalRead = scanf("%d", &procList[i].arrivalTime);
 		while (getchar() != '\n');  
 
-		printf("P%d: Burst=", procList[i].id);
-		burstRead = scanf("%d", &procList[i].burstTime);
-		while (getchar() != '\n');
+		// if arrivalInput was invalid, skip this one and jump to error handle
+		if(arrivalRead == 1) { 
+			printf("P%d: Burst=", procList[i].id);
+			burstRead = scanf("%d", &procList[i].burstTime);
+			while (getchar() != '\n');
+		}
 
 		// if invalid value entry retry for this (i) 
 		if (
