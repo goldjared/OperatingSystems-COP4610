@@ -30,31 +30,6 @@ void printOrder(int execLog[], int size) {
 
 
 void fcfs(struct simulatedProc processList[], int size) {
-/*
- *
-	** FCFS:
-* 	list input is exact order to print/execute on
-* 	create 2d array of [n][2], where each arr will store wait, turnaround time
-*	
-*	int time = 0
-*	double waitSum = 0;
-*	double turnaroundSum = 0;
-	init time to first arrival time
-* 	iterate to n (n is len proc list)
-* 		process_date[i][0] = time - arrival (set wait time)
-*
-* 		time += burst_time
-* 		process_date[i][1] = process_date[i][0] + burst_time 
-* 		waitSum += process_date[i][0]
-* 		turnAroundSum += process_date[i][1]
-*
-* 	print process list
-* 	print waitSum / n
-* 	print turnaroundSum / n
-*
-*
-	*/
-
 	// 2d array wait time, turnaround time, where i+1 = process id
 	int processData[size][2]; 
 	int time = processList[0].arrivalTime;
@@ -64,7 +39,6 @@ void fcfs(struct simulatedProc processList[], int size) {
 	int execLog[100];
 	int execCount = 0;
 	for(int i = 0; i < size; i++) {
-		// bug here for arrival 0, 1, 30
 		processData[i][0] = time + processList[i].arrivalTime;
 		time += processList[i].burstTime;
 		processData[i][1] = processData[i][0] + processList[i].burstTime;
@@ -77,7 +51,6 @@ void fcfs(struct simulatedProc processList[], int size) {
 	printOrder(execLog, execCount);
 	printf("Avg Waiting Time: %.2f\n", waitSum / size);
 	printf("Avg Turnaround Time: %.2f\n", turnAroundSum / size);
-
 }
 
 int main(void) {
