@@ -1,3 +1,10 @@
+/*
+* RELEVANT LINKS
+* 
+* - https://cplusplus.com/reference/cstdlib/qsort/
+* Referenced to build the custom sort function on the process structure list
+*
+*/
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -28,7 +35,6 @@ void printOrder(int execLog[], int size) {
 	printf("\n");
 }
 
-
 void fcfs(struct simulatedProc processList[], int size) {
 	// 2d array wait time, turnaround time, where i+1 = process id
 	int processData[size][2]; 
@@ -39,7 +45,7 @@ void fcfs(struct simulatedProc processList[], int size) {
 	int execLog[100];
 	int execCount = 0;
 	for(int i = 0; i < size; i++) {
-		processData[i][0] = time + processList[i].arrivalTime;
+		processData[i][0] = time - processList[i].arrivalTime;
 		time += processList[i].burstTime;
 		processData[i][1] = processData[i][0] + processList[i].burstTime;
 		waitSum += processData[i][0];
@@ -47,10 +53,15 @@ void fcfs(struct simulatedProc processList[], int size) {
 
 		execLog[execCount++] = processList[i].id;
 	}
+
 	printf("Simulating FCFS...\n");
 	printOrder(execLog, execCount);
-	printf("Avg Waiting Time: %.2f\n", waitSum / size);
-	printf("Avg Turnaround Time: %.2f\n", turnAroundSum / size);
+
+	double avgWait = waitSum / size;
+	printf("Avg Waiting Time: %.2f\n", avgWait);
+
+	double avgTurnaround = turnAroundSum / size;
+	printf("Avg Turnaround Time: %.2f\n", avgTurnaround);
 }
 
 int main(void) {
@@ -106,6 +117,8 @@ int main(void) {
 	qsort(procList, processCount, sizeof(struct simulatedProc), compareArrival);
 	// init FCFS
 	fcfs(procList, processCount);
+	printf("\n")
+	// init RR
 
 
 	return 1;
