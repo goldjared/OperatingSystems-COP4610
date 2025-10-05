@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#define TIME_QUANTUM 4;
+const int TIME_QUANTUM = 4;
 
 struct simulatedProc {
 	int id;
@@ -36,8 +36,15 @@ void printOrder(int execLog[], int size) {
 }
 
 void fcfs(struct simulatedProc processList[], int size) {
+
+	printf("Simulating FCFS...\n");
 	// 2d array wait time, turnaround time, where i+1 = process id
 	int processData[size][2]; 
+	// init to zero
+	for(int i = 0; i < size; i++) {
+		processData[i][0] = 0;
+		processData[i][1] = 0;
+	}
 	int time = processList[0].arrivalTime;
 	double waitSum = 0;
 	double turnAroundSum = 0;
@@ -54,7 +61,78 @@ void fcfs(struct simulatedProc processList[], int size) {
 		execLog[execCount++] = processList[i].id;
 	}
 
-	printf("Simulating FCFS...\n");
+	printOrder(execLog, execCount);
+
+	double avgWait = waitSum / size;
+	printf("Avg Waiting Time: %.2f\n", avgWait);
+
+	double avgTurnaround = turnAroundSum / size;
+	printf("Avg Turnaround Time: %.2f\n", avgTurnaround);
+}
+
+void rr(struct simulatedProc processList[], int size) {
+
+	printf("Simulating RR...\n");
+	// index 0 -> waitTime 1 -> turnAroundTime
+	int processData[size][2]; 
+	int lastExecSpot[size];
+	// build last execSpot
+	for(int i = 0; i < size; i++) {
+		processData[i][0] = 0;
+		processData[i][1] = 0;
+		lastExecSpot[i] = processList[i].arrivalTime;
+	}
+	int time = processList[0].arrivalTime;
+	int execLog[100];
+	int execCount = 0;
+	int procCount = size;
+	int curr=0;
+
+	while(procCount > 0) {
+
+		if(curr == size) curr=0;
+		if(processList[curr].burstTime == 0) {
+			curr++;
+			continue;
+		}
+
+		// log to execLog
+		execLog[execCount++] = processList[curr].id;
+
+		// set wait time, time - last exec
+		processData[curr][0] += time - lastExecSpot[curr];
+
+		// curr proc completes at this point
+		if(processList[curr].burstTime <= TIME_QUANTUM) {
+			// add burst to time
+			time += processList[curr].burstTime;
+
+			// turnAround = completion time - arrival 
+			processData[curr][1] = time - processList[curr].arrivalTime;
+
+			// set burst to 0
+			processList[curr].burstTime = 0;
+			procCount--;
+
+		} else {
+			processList[curr].burstTime -= TIME_QUANTUM;
+			time += TIME_QUANTUM;
+		}
+		
+		lastExecSpot[curr] = time;
+
+		curr++;
+	}
+
+	double waitSum = 0;
+	double turnAroundSum = 0;
+	// build waitSum and turnAroundSum
+	for(int i = 0; i < size; i++) {
+		waitSum += processData[i][0];
+		turnAroundSum += processData[i][1];
+	}
+
+
 	printOrder(execLog, execCount);
 
 	double avgWait = waitSum / size;
@@ -117,9 +195,9 @@ int main(void) {
 	qsort(procList, processCount, sizeof(struct simulatedProc), compareArrival);
 	// init FCFS
 	fcfs(procList, processCount);
-	printf("\n")
+	printf("\n");
 	// init RR
-
+	rr(procList, processCount);
 
 	return 1;
 }
