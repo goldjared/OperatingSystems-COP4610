@@ -72,7 +72,7 @@ void fcfs(struct simulatedProc processList[], int size) {
 
 void rr(struct simulatedProc processList[], int size) {
 
-	printf("Simulating RR...\n");
+	printf("Simulating RR... (time quantum: %d)\n", TIME_QUANTUM);
 	// index 0 -> waitTime 1 -> turnAroundTime
 	int processData[size][2]; 
 	int lastExecSpot[size];
@@ -146,11 +146,11 @@ int main(void) {
 
 	// get total processes to simulate
 	int processCount = 0;
-	printf("Enter a number of processes (1-5): ");
+	printf("Enter a number of processes (1-10): ");
 	scanf("%d", &processCount);
 
 	// if invalid value entry exit program
-	if(processCount < 1 || processCount > 5) {
+	if(processCount < 1 || processCount > 10) {
 		printf("Invalid Input, exiting.\n");
 		return 1;
 	}
