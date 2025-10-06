@@ -94,10 +94,15 @@ void rr(struct simulatedProc processList[], int size) {
 	int procCount = size;
 	int curr=0;
 
+	int iteratedSizeTimes = 0;
 	while(procCount > 0) {
+		if(iteratedSizeTimes < size) iteratedSizeTimes++;
 
 		if(curr == size) curr=0;
 		if(processList[curr].burstTime == 0 || processList[curr].arrivalTime > time) {
+			if(iteratedSizeTimes == size && processList[curr].arrivalTime > time) {
+				time = processList[curr].arrivalTime;
+			}
 			curr++;
 			continue;
 		}
