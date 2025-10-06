@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-const int TIME_QUANTUM = 4;
+const int TIME_QUANTUM = 2;
 
 struct simulatedProc {
 	int id;
@@ -52,9 +52,15 @@ void fcfs(struct simulatedProc processList[], int size) {
 	int execLog[100];
 	int execCount = 0;
 	for(int i = 0; i < size; i++) {
+
+		if (time < processList[i].arrivalTime) {
+			// wait for process to arrive
+			time = processList[i].arrivalTime; 
+		}
 		processData[i][0] = time - processList[i].arrivalTime;
 		time += processList[i].burstTime;
-		processData[i][1] = processData[i][0] + processList[i].burstTime;
+
+		processData[i][1] = time - processList[i].arrivalTime;
 		waitSum += processData[i][0];
 		turnAroundSum += processData[i][1];
 
@@ -83,7 +89,7 @@ void rr(struct simulatedProc processList[], int size) {
 		lastExecSpot[i] = processList[i].arrivalTime;
 	}
 	int time = processList[0].arrivalTime;
-	int execLog[100];
+	int execLog[500];
 	int execCount = 0;
 	int procCount = size;
 	int curr=0;
@@ -91,7 +97,7 @@ void rr(struct simulatedProc processList[], int size) {
 	while(procCount > 0) {
 
 		if(curr == size) curr=0;
-		if(processList[curr].burstTime == 0) {
+		if(processList[curr].burstTime == 0 || processList[curr].arrivalTime > time) {
 			curr++;
 			continue;
 		}
@@ -100,7 +106,9 @@ void rr(struct simulatedProc processList[], int size) {
 		execLog[execCount++] = processList[curr].id;
 
 		// set wait time, time - last exec
-		processData[curr][0] += time - lastExecSpot[curr];
+		if (time > lastExecSpot[curr]) {
+			processData[curr][0] += time - lastExecSpot[curr];
+		}
 
 		// curr proc completes at this point
 		if(processList[curr].burstTime <= TIME_QUANTUM) {
@@ -180,11 +188,11 @@ int main(void) {
 			arrivalRead != 1 || 
 			burstRead != 1 || 
 			procList[i].arrivalTime < 0 ||
-			procList[i].arrivalTime > 10000 ||
+			procList[i].arrivalTime > 100 ||
 			procList[i].burstTime < 1 ||
-			procList[i].burstTime > 10000
+			procList[i].burstTime > 100
 		) {
-		    printf("Invalid input. Please enter values between 0-10000 for Arrival, and 1-10000 for Burst.\n");
+		    printf("Invalid input. Please enter values between 0-100 for Arrival, and 1-100 for Burst.\n");
 		    i--; // retry current process
 		}
 		
@@ -199,5 +207,5 @@ int main(void) {
 	// init RR
 	rr(procList, processCount);
 
-	return 1;
+	return 0;
 }
