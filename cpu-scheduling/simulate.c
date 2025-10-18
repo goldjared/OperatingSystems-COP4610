@@ -4,9 +4,16 @@
 * - https://cplusplus.com/reference/cstdlib/qsort/
 * Referenced to build the custom sort function on the process structure list
 *
+* Was not familiar with the c sorting regarding passing the custom sort fn, used this resource and learned how to utilize the sort fn with my custom comparator.
+*
+* Debugging: 
+* Ran multiple local runs, FCFS worked with little debug.
+* While RR I ran into some troubles when next process arrivalTime > currTime, my fix in this case was allowing the cpu to have an "idle" via conditional check
+*
 */
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 const int TIME_QUANTUM = 2;
 
@@ -36,6 +43,9 @@ void printOrder(int execLog[], int size) {
 }
 
 void fcfs(struct simulatedProc processList[], int size) {
+	clock_t start_time = clock();
+	
+
 
 	printf("Simulating FCFS...\n");
 	// 2d array wait time, turnaround time, where i+1 = process id
@@ -74,10 +84,15 @@ void fcfs(struct simulatedProc processList[], int size) {
 
 	double avgTurnaround = turnAroundSum / size;
 	printf("Avg Turnaround Time: %.2f\n", avgTurnaround);
+	clock_t end_time = clock();
+	double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+	printf("FCFS took %f seconds to execute.\n", time_taken);
+
 }
 
 void rr(struct simulatedProc processList[], int size) {
 
+	clock_t start_time = clock();
 	printf("Simulating RR... (time quantum: %d)\n", TIME_QUANTUM);
 	// index 0 -> waitTime 1 -> turnAroundTime
 	int processData[size][2]; 
@@ -153,6 +168,10 @@ void rr(struct simulatedProc processList[], int size) {
 
 	double avgTurnaround = turnAroundSum / size;
 	printf("Avg Turnaround Time: %.2f\n", avgTurnaround);
+	clock_t end_time = clock();
+	double time_taken = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+	printf("RR took %f seconds to execute.\n", time_taken);
+
 }
 
 int main(void) {
@@ -208,9 +227,12 @@ int main(void) {
 	qsort(procList, processCount, sizeof(struct simulatedProc), compareArrival);
 	// init FCFS
 	fcfs(procList, processCount);
+
 	printf("\n");
+
 	// init RR
 	rr(procList, processCount);
+
 
 	return 0;
 }
