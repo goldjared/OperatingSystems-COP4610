@@ -1,3 +1,28 @@
+/*
+*
+* INSTRUCTIONS: expected filename is 'data.txt' -> 
+* example file contents:
+* 0 1 2 3
+* 1 9 8 2
+* 5 2 2 2
+* 1 3 0 7
+* 7 7 3 5
+*
+*
+* DEBUG:
+* * Had a bug where valid requests were denied and some 'need' values turned negative.  
+* utilized this article to ref https://www.geeksforgeeks.org/operating-systems/bankers-algorithm-in-operating-system-2/  
+* , with this ref I double checked the algo orders and found
+* 1) Check if Request ≤ Need  
+* 2) Check if Request ≤ Available  
+* 3) TENTATIVELY allocate, then run safety check  
+* 4) Roll back if unsafe  
+* I had steps 1–3 mixed up, and was able to debug with prints and rearrange my ordering. 
+* 
+*
+* another issue I ran into was my safety checker, I forgot to increment the counter after a customer was completed. this led to always being an unsafe state. The way I debugged was printing all the contents in that function. I noticed right away the counter was never changing.
+*/
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -25,7 +50,6 @@ void display() {
 	}
 	printf("]\n\n");
 
-	// Print Maximum
 	printf("Maximum:\n");
 	for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++) {
 		printf("P%d: [", i);
@@ -38,7 +62,6 @@ void display() {
 	}
 	printf("\n");
 
-	// Print Allocation
 	printf("Allocation:\n");
 	for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++) {
 	    printf("P%d: [", i);
@@ -51,7 +74,6 @@ void display() {
 	}
 	printf("\n");
 
-	// Print Need
 	printf("Need:\n");
 	for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++) {
 	    printf("P%d: [", i);
@@ -68,6 +90,100 @@ void display() {
 
 // safe state check
 // check for the customer id, each req resource. if any resource > need, auto reject
+// Function to check if the system is in a safe state
+int isSafe() {
+	int work[NUMBER_OF_RESOURCES];
+	int finish[NUMBER_OF_CUSTOMERS] = {0}; 	
+	int count = 0;
+
+	// set work to avail
+	for (int i = 0; i < NUMBER_OF_RESOURCES; i++) {
+		work[i] = available[i];
+	}
+
+	// find any customer proc that can complete
+	while (count < NUMBER_OF_CUSTOMERS) {
+		int found = 0;
+		for (int i = 0; i < NUMBER_OF_CUSTOMERS; i++) {
+			if (finish[i] == 0) { // if not yet finished
+				int canFinish = 1;
+				for (int j = 0; j < NUMBER_OF_RESOURCES; j++) {
+					if (need[i][j] > work[j]) {
+						canFinish = 0;
+						break;
+					}
+				}
+			if (canFinish) {
+				// This process can finish - simulate releasing its resources
+				for (int j = 0; j < NUMBER_OF_RESOURCES; j++) {
+					work[j] += allocation[i][j];
+				}
+				finish[i] = 1;
+				count++;
+				found = 1;
+			}
+		}
+	    }
+
+	    if (!found) {
+		// No process could finish - unsafe state
+		printf("System is NOT in a safe state.\n");
+		return 0;
+	    }
+	}
+
+	printf("System is in a SAFE state.\n");
+	
+	return 1;
+}
+
+
+int requestResources(int customer_id, int request[]) {
+    for (int j = 0; j < NUMBER_OF_RESOURCES; j++) {
+        if (request[j] > need[customer_id][j]) {
+            printf("ERROR: Request exceeding customer's need.\n");
+            return 0;
+        }
+
+        if (request[j] > available[j]) {
+            printf("ERROR: Resources NOT available.\n");
+            return 0;
+        }
+    }
+
+    // allocate resources
+    for (int k = 0; k < NUMBER_OF_RESOURCES; k++) {
+        available[k] -= request[k];
+        allocation[customer_id][k] += request[k];
+        need[customer_id][k] -= request[k];
+    }
+
+    // after we allocate above, check for safe state. 
+    if (isSafe()) {
+        printf("Request granted. System is in a safe state.\n");
+        return 1;
+    } else {
+	// for the case of isSafe false, we need to rollback the above allocation
+        for (int j = 0; j < NUMBER_OF_RESOURCES; j++) {
+            available[j] += request[j];
+            allocation[customer_id][j] -= request[j];
+            need[customer_id][j] += request[j];
+        }
+        printf("Request denied. System would be left in an unsafe state.\n");
+        return 0;
+    }
+}
+
+int release(int customerId, int release[]) {
+    for (int i = 0; i < NUMBER_OF_RESOURCES; i++) {
+	allocation[customerId][i] -= release[i];
+	available[i] += release[i];
+	need[customerId][i] += release[i];
+    }
+
+    printf("Resources released successfully.\n");
+    return 1;
+}
 
 int main(int argc, char *argv[]) {
 	printf("Welcome to the Banker's Algorithm Simulation.\n");
@@ -129,61 +245,73 @@ int main(int argc, char *argv[]) {
 	printf("- 'exit' to quit\n");
 
 
-	char input[100]; // Buffer to store user input
+	char input[100];
 
 	while (1) {
 		printf("> "); // Prompt for input
 		
 
 		if (fgets(input, sizeof(input), stdin) == NULL) {
-			// Handle potential input error or EOF
+			// input error, re try
 			continue;
 		}
 
-		// Split into tokens
-		char *cmd = strtok(input, " "); // first token = command
-
-		if (cmd == NULL)
-			continue; // skip empty line
-
-		
-
-		// Remove trailing newline character if present
+		// tokenize user input, first token = command
+		char *command = strtok(input, " "); 
+		if (command == NULL) {
+			continue; 
+		}
+		// rmv trail new line
 		input[strcspn(input, "\n")] = 0;
 
 
-		// Handle commands
-		if (strcmp(cmd, "exit") == 0) {
+		if (strcmp(command, "exit") == 0) {
 			printf("Exiting...\n");
 			break;
 		}
-		else if (strcmp(cmd, "RQ") == 0) {
-			// Extract the next 4 integers
-			char *t1 = strtok(NULL, " "); // this is the customer ID
-			char *t2 = strtok(NULL, " ");
-			char *t3 = strtok(NULL, " ");
-			char *t4 = strtok(NULL, " ");
-			char *t5 = strtok(NULL, " ");
+		else if (strcmp(command, "RQ") == 0) {
+			// t1 is customer id
+			char *token1 = strtok(NULL, " "); 
+			char *token2 = strtok(NULL, " ");
+			char *token3 = strtok(NULL, " ");
+			char *token4 = strtok(NULL, " ");
+			char *token5 = strtok(NULL, " ");
 
-			if (t1 && t2 && t3 && t4) {
-				int a = atoi(t1);
-				int b = atoi(t2);
-				int c = atoi(t3);
-				int d = atoi(t4);
-				int e = atoi(t5);
-				//RQ(a, b, c, d);
-				printf("RQ command, vals: %d %d %d %d %d\n", a, b, c, d, e);
+			if (token1 && token2 && token3 && token4) {
+				int customer_id = atoi(token1);
+				int req[NUMBER_OF_RESOURCES] = {atoi(token2), atoi(token3), atoi(token4), atoi(token5)};
+				
+				if (customer_id < 0 || customer_id >= NUMBER_OF_CUSTOMERS) {
+				    printf("Invalid customer ID (VALID: 0-4.\n");
+				    continue;
+				}
+
+				requestResources(customer_id, req);
 			} else {
-				printf("Invalid RQ format. Follow this format: RQ <a> <b> <c> <d>\n");
+				printf("Invalid RQ format. Follow format: RQ <customer> <a> <b> <c> <d>\n");
 			}
 		}
-		else if (strcmp(cmd, "RL") == 0) {
-			printf("RL command - releasing resources (example).\n");
-		} else if (strcmp(cmd, "*") == 0) {
+		else if (strcmp(command, "RL") == 0) {
+		    char *token1 = strtok(NULL, " ");
+		    char *token2 = strtok(NULL, " ");
+		    char *token3 = strtok(NULL, " ");
+		    char *token4 = strtok(NULL, " ");
+		    char *token5 = strtok(NULL, " ");
+
+		    if (token1 && token2 && token3 && token4 && token5) {
+			int customer_id = atoi(token1);
+			int rel[NUMBER_OF_RESOURCES] = {atoi(token2), atoi(token3), atoi(token4), atoi(token5)};
+
+			release(customer_id, rel);
+		    } else {
+			printf("Invalid RL format. Use: RL <customerId> <r1> <r2> <r3> <r4>\n");
+		    }
+
+		} else if (strcmp(command, "*") == 0) {
 			display();
 		}
 		else {
-			printf("Unknown command: %s\n", cmd);
+			printf("Unknown command: %s\n", command);
 		}
 	}
 	
