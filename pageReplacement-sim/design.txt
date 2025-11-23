@@ -1,0 +1,53 @@
+takes 2 cli args, filename (with file type), and number of frames
+
+params pagereffile, numberofframes
+	pagereffile numbers sep by space (this is ref string)
+	numFrames [1-10]
+
+sim fifo and lru replacement algos
+	count how many page faults occur in each case
+	track and disp final state of mem (i.e the array of frames)
+
+	-> handle invalid inputs, file not found, frame size invalid, wrong # args
+
+
+pseudo:
+prog start
+pass filename and frame_total
+-> validate frame count
+-> set/validate filename
+
+ref string reads from file, create buffer arr len 100, populate. count entries to maintain end, e.g. buffer len 100, 5 entries, -> 0 1 2 3 4 [end], so count-1 = end or , i < count ... once i=count
+
+array of frames, len = user frame # input
+
+FIFO:
+init frame to frame size
+init counter=0
+
+iter ref string
+	for each int, search frame array for match, 
+		if no match replace F in FIFO with curr, update counter
+		if match, continue
+
+
+
+
+LRU:
+init frame to frame size
+init counter=0
+
+1 4 5 8 4
+
+1
+
+1 4
+1 4 5
+!hit
+-> lru is index 0
+frame[lru++] = curr
+8 4 5, lru = 1, when lru = frame size - 1 -> (lru + 1) % frame = (3) % 3 = 0 -> so we get circular.
+
+8 4 5 
+
+
